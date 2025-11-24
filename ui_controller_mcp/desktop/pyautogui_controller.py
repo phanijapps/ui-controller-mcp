@@ -20,7 +20,11 @@ class PyAutoGUIController:
         spec = importlib.util.find_spec("pyautogui")
         if spec is None:
             return None
-        module = importlib.import_module("pyautogui")
+        try:
+            module = importlib.import_module("pyautogui")
+        except Exception:  # noqa: BLE001
+            return None
+
         module.FAILSAFE = False
         return module
 
