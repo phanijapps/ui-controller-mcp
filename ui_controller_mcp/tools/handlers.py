@@ -61,6 +61,9 @@ class ToolExecutor:
         payload: dict[str, Any] = {"success": result.success, "message": result.message}
         if result.data is not None:
             payload.update(result.data)
+        # Ensure 'windows' key exists even if empty
+        if "windows" not in payload:
+            payload["windows"] = []
         return payload
 
     def _focus_window(self, params: Dict[str, Any]) -> dict[str, Any]:
