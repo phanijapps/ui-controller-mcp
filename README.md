@@ -1,6 +1,6 @@
 # ui-controller-mcp
 
-A lightweight Model Context Protocol (MCP) server that exposes desktop UI control tools over Server-Sent Events (SSE). It provides structured tool definitions, JSON Schema contracts, and optional ngrok tunneling for remote access.
+A lightweight Model Context Protocol (MCP) server built on [FastMCP](https://github.com/modelcontextprotocol/fastmcp) that exposes desktop UI control tools over Server-Sent Events (SSE). It provides structured tool definitions, JSON Schema contracts, and optional ngrok tunneling for remote access.
 
 ## Features
 - MCP-compatible SSE streaming at `/sse` with tool metadata and heartbeats.
@@ -38,31 +38,8 @@ On startup the server prints the public ngrok URL once the tunnel is established
 
 ## API overview
 - `GET /sse`: SSE stream that emits a `ready` event with tool schemas followed by periodic `ping` events.
-- `POST /invoke`: Execute a tool.
-- `GET /schema`: Retrieve the MCP tool definitions.
+- `POST /messages`: MCP message transport handled by FastMCP for tool invocation.
 - `GET /health`: Lightweight health check.
-
-### Example MCP client request
-```bash
-curl -X POST http://localhost:8000/invoke \
-  -H "Content-Type: application/json" \
-  -d '{
-        "tool": "click",
-        "params": {"x": 100, "y": 200, "button": "left"}
-      }'
-```
-Response:
-```json
-{
-  "success": true,
-  "tool": "click",
-  "result": {
-    "success": true,
-    "message": "Click at (100, 200) with left recorded (noop mode)"
-  },
-  "error": null
-}
-```
 
 ### SSE handshake sample
 Connect to `GET /sse` and expect an initial event similar to:
