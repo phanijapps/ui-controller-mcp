@@ -149,4 +149,46 @@ def tool_definitions() -> List[dict[str, Any]]:
                 "required": ["path", "size", "base64_data"],
             },
         },
+        {
+            "name": "perceive",
+            "description": "Analyze the current screen state using vision AI",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "instruction": {
+                        "type": "string",
+                        "description": "Optional instruction to focus the analysis (e.g., 'find the submit button')",
+                    },
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "analysis": {"type": "string", "description": "Description of the UI elements and context"},
+                },
+                "required": ["analysis"],
+            },
+        },
+        {
+            "name": "reason",
+            "description": "Plan the next action based on UI analysis and goal",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "analysis": {"type": "string", "description": "The analysis from the perceive step"},
+                    "goal": {"type": "string", "description": "The user's ultimate goal"},
+                },
+                "required": ["analysis", "goal"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "plan": {"type": "string", "description": "The planned next action"},
+                },
+                "required": ["plan"],
+            },
+        },
     ]

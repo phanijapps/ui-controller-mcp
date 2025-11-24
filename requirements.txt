@@ -1,7 +1,10 @@
-fastmcp==2.13.1
-pyngrok==7.1.0
-pyautogui==0.9.54
-pillow==10.3.0
-pydantic==2.12.4
-python-dotenv==1.2.1
-pytest==8.2.2
+ollama
+fastmcp
+pyngrok
+pyautogui
+pillow
+pydantic
+python-dotenv
+pytest
+uvicorn
+opencv-python

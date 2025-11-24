@@ -9,6 +9,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from ui_controller_mcp.ai.client import AIClient
 from ui_controller_mcp.desktop.factory import get_controller
 from ui_controller_mcp.server.ngrok_manager import NgrokManager
 from ui_controller_mcp.tools.definitions import tool_definitions
@@ -20,8 +21,9 @@ logger = configure_logging()
 
 controller = get_controller()
 safety_guard = SafetyGuard()
+ai_client = AIClient()
 _tool_metadata = {tool["name"]: tool for tool in tool_definitions()}
-tool_executor = ToolExecutor(controller, safety_guard)
+tool_executor = ToolExecutor(controller, safety_guard, ai_client)
 ngrok_manager = NgrokManager(port=8000)
 
 
@@ -147,6 +149,28 @@ def get_bytes(path: str) -> dict[str, Any]:
     """Read a file from disk and return its contents encoded as base64."""
 
     return tool_executor.execute("get_bytes", {"path": path})
+
+
+@server.tool(
+    name="perceive",
+    description=_tool_info("perceive")["description"],
+    output_schema=_tool_info("perceive")["output_schema"],
+)
+def perceive(instruction: str = "") -> dict[str, Any]:
+    """Analyze the current screen state using vision AI."""
+
+    return tool_executor.execute("perceive", {"instruction": instruction})
+
+
+@server.tool(
+    name="reason",
+    description=_tool_info("reason")["description"],
+    output_schema=_tool_info("reason")["output_schema"],
+)
+def reason(analysis: str, goal: str) -> dict[str, Any]:
+    """Plan the next action based on UI analysis and goal."""
+
+    return tool_executor.execute("reason", {"analysis": analysis, "goal": goal})
 
 
 async def health(_: Request) -> JSONResponse:  # pragma: no cover - trivial

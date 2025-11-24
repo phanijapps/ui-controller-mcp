@@ -16,4 +16,4 @@ export PYTHONPATH=$(pwd)
 PORT=${PORT:-8000}
 
 echo "Starting ui-controller-mcp on port ${PORT} with ngrok support..."
-uvicorn ui_controller_mcp.server.app:app --host 0.0.0.0 --port "${PORT}"
+.venv/bin/uvicorn ui_controller_mcp.server.app:app --host 0.0.0.0 --port "${PORT}"

@@ -4,6 +4,7 @@ import base64
 from pathlib import Path
 from typing import Any, Dict
 
+from ui_controller_mcp.ai.client import AIClient
 from ui_controller_mcp.desktop.base import DesktopController
 from ui_controller_mcp.utils.safety import SafetyGuard
 
@@ -11,9 +12,17 @@ from ui_controller_mcp.utils.safety import SafetyGuard
 class ToolExecutor:
     """Executes tool invocations using the provided controller and safety guard."""
 
-    def __init__(self, controller: DesktopController, safety_guard: SafetyGuard, *, max_read_size: int = 5 * 1024 * 1024) -> None:
+    def __init__(
+        self,
+        controller: DesktopController,
+        safety_guard: SafetyGuard,
+        ai_client: AIClient | None = None,
+        *,
+        max_read_size: int = 5 * 1024 * 1024,
+    ) -> None:
         self.controller = controller
         self.safety_guard = safety_guard
+        self.ai_client = ai_client
         self.max_read_size = max_read_size
 
     def execute(self, name: str, params: Dict[str, Any]) -> dict[str, Any]:
@@ -33,6 +42,10 @@ class ToolExecutor:
             return self._screenshot()
         if name == "get_bytes":
             return self._get_bytes(params)
+        if name == "perceive":
+            return self._perceive(params)
+        if name == "reason":
+            return self._reason(params)
         raise ValueError(f"Unsupported tool: {name}")
 
     def _launch_app(self, params: Dict[str, Any]) -> dict[str, Any]:
@@ -111,3 +124,31 @@ class ToolExecutor:
             "message": "File bytes encoded",
             "data": {"path": str(path), "size": size, "base64_data": encoded},
         }
+
+    def _perceive(self, params: Dict[str, Any]) -> dict[str, Any]:
+        if not self.ai_client:
+            return {"success": False, "error": "AI capabilities not available"}
+
+        # Take a screenshot first
+        screenshot_result = self.controller.screenshot()
+        if not screenshot_result.success or not screenshot_result.data:
+            return {"success": False, "error": f"Failed to take screenshot: {screenshot_result.message}"}
+
+        image_data = screenshot_result.data.get("base64_data")
+        if not image_data:
+            return {"success": False, "error": "No base64 image data available from screenshot"}
+
+        instruction = params.get("instruction", "")
+
+        analysis = self.ai_client.analyze_image(image_data, instruction)
+        return {"success": True, "message": "Screen analyzed", "analysis": analysis}
+
+    def _reason(self, params: Dict[str, Any]) -> dict[str, Any]:
+        if not self.ai_client:
+            return {"success": False, "error": "AI capabilities not available"}
+
+        analysis = params.get("analysis", "")
+        goal = params.get("goal", "")
+
+        plan = self.ai_client.plan_action(analysis, goal)
+        return {"success": True, "message": "Action planned", "plan": plan}

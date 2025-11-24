@@ -17,8 +17,18 @@ class NgrokManager:
             return None
 
         ngrok.set_auth_token(token)
+        
+        # Build connection options
+        options = {"bind_tls": True}
+        
+        # Add domain if specified
+        domain = os.getenv("NGROK_DOMAIN")
+        if domain:
+            options["hostname"] = domain
+        
         if self.tunnel is None:
-            self.tunnel = ngrok.connect(self.port, proto="http")
+            self.tunnel = ngrok.connect(self.port, **options)
+        
         return self.tunnel.public_url
 
     def stop(self) -> None:
