@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+from pathlib import Path
 from typing import Any, Dict
 
 from ui_controller_mcp.desktop.base import DesktopController
@@ -7,9 +9,12 @@ from ui_controller_mcp.utils.safety import SafetyGuard
 
 
 class ToolExecutor:
-    def __init__(self, controller: DesktopController, safety_guard: SafetyGuard) -> None:
+    """Executes tool invocations using the provided controller and safety guard."""
+
+    def __init__(self, controller: DesktopController, safety_guard: SafetyGuard, *, max_read_size: int = 5 * 1024 * 1024) -> None:
         self.controller = controller
         self.safety_guard = safety_guard
+        self.max_read_size = max_read_size
 
     def execute(self, name: str, params: Dict[str, Any]) -> dict[str, Any]:
         if name == "launch_app":
@@ -26,6 +31,8 @@ class ToolExecutor:
             return self._scroll(params)
         if name == "screenshot":
             return self._screenshot()
+        if name == "get_bytes":
+            return self._get_bytes(params)
         raise ValueError(f"Unsupported tool: {name}")
 
     def _launch_app(self, params: Dict[str, Any]) -> dict[str, Any]:
@@ -70,3 +77,37 @@ class ToolExecutor:
         if result.data is not None:
             payload.update(result.data)
         return payload
+
+    def _get_bytes(self, params: Dict[str, Any]) -> dict[str, Any]:
+        raw_path = params.get("path", "")
+        if not raw_path:
+            return {"success": False, "error": "File path is required"}
+
+        path = Path(raw_path).expanduser().resolve()
+        if not path.exists():
+            return {"success": False, "error": f"File not found: {path}"}
+        if not path.is_file():
+            return {"success": False, "error": f"Path is not a file: {path}"}
+
+        try:
+            size = path.stat().st_size
+        except OSError as exc:  # noqa: BLE001
+            return {"success": False, "error": f"Unable to read file metadata: {exc}"}
+
+        if size > self.max_read_size:
+            return {
+                "success": False,
+                "error": f"File is too large to read safely (size={size} bytes, limit={self.max_read_size} bytes)",
+            }
+
+        try:
+            content = path.read_bytes()
+        except OSError as exc:  # noqa: BLE001
+            return {"success": False, "error": f"Unable to read file: {exc}"}
+
+        encoded = base64.b64encode(content).decode("ascii")
+        return {
+            "success": True,
+            "message": "File bytes encoded",
+            "data": {"path": str(path), "size": size, "base64_data": encoded},
+        }

@@ -120,8 +120,33 @@ def tool_definitions() -> List[dict[str, Any]]:
                 "properties": {
                     "path": {"type": "string"},
                     "captured_at": {"type": "string"},
+                    "base64_data": {
+                        "type": "string",
+                        "description": "Screenshot encoded as a base64 string",
+                    },
                 },
                 "required": ["captured_at"],
+            },
+        },
+        {
+            "name": "get_bytes",
+            "description": "Read a file and return its contents as base64",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Absolute or relative file path"},
+                },
+                "required": ["path"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "size": {"type": "integer", "description": "Size in bytes"},
+                    "base64_data": {"type": "string", "description": "File contents encoded as base64"},
+                },
+                "required": ["path", "size", "base64_data"],
             },
         },
     ]
