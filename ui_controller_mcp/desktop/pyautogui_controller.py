@@ -39,7 +39,8 @@ class PyAutoGUIController:
         if self.pyautogui is None:
             return DesktopActionResult(False, "PyAutoGUI not available for window listing")
         try:
-            windows = [win.title for win in self.pyautogui.getAllWindows()]
+            # Filter out windows with empty titles
+            windows = [win.title for win in self.pyautogui.getAllWindows() if win.title.strip()]
             return DesktopActionResult(True, "Windows listed", data={"windows": windows})
         except Exception as exc:  # noqa: BLE001
             return DesktopActionResult(False, f"Unable to list windows: {exc}")
