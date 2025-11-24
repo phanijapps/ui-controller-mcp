@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import subprocess
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -91,8 +92,14 @@ class PyAutoGUIController:
             image = self.pyautogui.screenshot()
             output_dir = Path.cwd() / "screenshots"
             output_dir.mkdir(parents=True, exist_ok=True)
+            captured_at = datetime.utcnow().isoformat()
             file_path = output_dir / f"screenshot-{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}.png"
             image.save(file_path)
-            return DesktopActionResult(True, "Screenshot captured", data={"path": str(file_path)})
+            encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
+            return DesktopActionResult(
+                True,
+                "Screenshot captured",
+                data={"path": str(file_path), "captured_at": captured_at, "base64_data": encoded},
+            )
         except Exception as exc:  # noqa: BLE001
             return DesktopActionResult(False, f"Screenshot failed: {exc}")
