@@ -9,3 +9,6 @@ pytest
 uvicorn
 opencv-python
 pywinctl
+keyring
+cryptography
+opencv-python

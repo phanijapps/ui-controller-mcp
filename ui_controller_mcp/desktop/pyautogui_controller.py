@@ -73,10 +73,60 @@ class PyAutoGUIController:
         except Exception as exc:
             return DesktopActionResult(False, f"Failed to launch '{target}': {exc}")
 
+            return DesktopActionResult(False, f"Screenshot failed: {exc}")
+
+    def run_terminal_cmd(self, command: str) -> DesktopActionResult:
+        """
+        Run a shell command in the background and return output.
+        """
+        try:
+            # Use subprocess.run for simple commands
+            result = subprocess.run(
+                command, 
+                shell=True, 
+                capture_output=True, 
+                text=True, 
+                timeout=10
+            )
+            
+            return DesktopActionResult(
+                True, 
+                "Command executed", 
+                data={
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                    "returncode": result.returncode
+                }
+            )
+        except subprocess.TimeoutExpired:
+            return DesktopActionResult(False, "Command timed out")
+        except Exception as exc:
+            return DesktopActionResult(False, f"Command failed: {exc}")
+
+    def _has_wmctrl(self) -> bool:
+        """Check if wmctrl is available."""
+        import shutil
+        return shutil.which("wmctrl") is not None
+
     def list_windows(self) -> DesktopActionResult:
         """
-        Lists windows using PyWinCtl (Cross-platform).
+        Lists windows using wmctrl (if available) or PyWinCtl.
         """
+        if self._has_wmctrl():
+            try:
+                # wmctrl -l lists windows
+                result = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True)
+                lines = result.stdout.strip().split("\n")
+                # Format: 0x04400003  0 machine-name Window Title
+                windows = []
+                for line in lines:
+                    parts = line.split(maxsplit=3)
+                    if len(parts) >= 4:
+                        windows.append(parts[3])
+                return DesktopActionResult(True, "Windows listed (wmctrl)", data={"windows": windows})
+            except Exception:
+                pass # Fallback to pywinctl
+
         if self.pywinctl is None:
             return DesktopActionResult(False, "PyWinCtl not installed/available")
 
@@ -92,8 +142,19 @@ class PyAutoGUIController:
 
     def focus_window(self, title: str) -> DesktopActionResult:
         """
-        Focuses a window using PyWinCtl.
+        Focuses a window using wmctrl (if available) or PyWinCtl.
         """
+        if self._has_wmctrl():
+            try:
+                # wmctrl -a switches to window with matching title
+                subprocess.run(["wmctrl", "-a", title], check=True)
+                return DesktopActionResult(True, f"Focused window '{title}' (wmctrl)")
+            except subprocess.CalledProcessError:
+                # wmctrl returns non-zero if no window found (usually)
+                pass # Fallback or report error
+            except Exception:
+                pass
+
         if self.pywinctl is None:
             return DesktopActionResult(False, "PyWinCtl not installed/available")
 

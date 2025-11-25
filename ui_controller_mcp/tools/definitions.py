@@ -701,4 +701,438 @@ IMPORTANT NOTES:
                 "required": ["plan"],
             },
         },
+        {
+            "name": "manage_credentials",
+            "description": """Store or retrieve secure credentials (passwords, API keys).
+
+WHEN TO USE:
+- Setting up passwords for the agent to use later
+- Checking if a credential exists (without revealing it)
+- Updating stored passwords
+
+HOW IT WORKS:
+- Uses system keyring or encrypted local file
+- Passwords are stored securely, not in plain text files
+
+INPUT:
+- action: "set" or "check" (get is not exposed to prevent leakage)
+- id: Identifier for the credential (e.g., "sudo_pass", "signal_pin")
+- value: The password/secret (only required for "set")
+
+OUTPUT:
+- message: Success/failure status
+
+EXAMPLE:
+manage_credentials(action="set", id="sudo_pass", value="mypassword123")""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["set", "check"],
+                        "description": "Action to perform",
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "Identifier for the credential",
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "The password value (required for 'set')",
+                    },
+                },
+                "required": ["action", "id"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "message": {"type": "string", "description": "Status message"},
+                },
+                "required": ["message"],
+            },
+        },
+        {
+            "name": "type_password",
+            "description": """Type a stored password securely into the active field.
+
+WHEN TO USE:
+- Logging into websites or apps
+- Entering sudo passwords (if handle_sudo doesn't apply)
+- Unlocking secure notes
+
+HOW IT WORKS:
+- Retrieves password from secure storage using the 'id'
+- Types it into the active window
+- DOES NOT log the password in the agent trace or output
+
+INPUT:
+- id: Identifier of the stored credential (e.g., "sudo_pass")
+- enter: Whether to press Enter after typing (default: True)
+
+OUTPUT:
+- message: Confirmation (without revealing password)
+
+EXAMPLE:
+# Focus password field first
+click(x=500, y=500)
+type_password(id="github_token")""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Identifier of the stored credential",
+                    },
+                    "enter": {
+                        "type": "boolean",
+                        "description": "Press Enter after typing (default: True)",
+                    },
+                },
+                "required": ["id"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "message": {"type": "string", "description": "Status message"},
+                },
+                "required": ["message"],
+            },
+        },
+        {
+            "name": "handle_sudo",
+            "description": """Handle a sudo prompt by typing the stored sudo password.
+
+WHEN TO USE:
+- When a terminal or GUI asks for sudo privileges
+- After running a command like 'sudo apt update'
+
+HOW IT WORKS:
+- Retrieves the credential with id="sudo_pass"
+- Types it securely
+- Presses Enter
+
+INPUT:
+- No parameters required (assumes 'sudo_pass' is the key)
+
+OUTPUT:
+- message: Success/failure status
+
+EXAMPLE:
+type_text("sudo apt update", enter=True)
+time.sleep(1)
+handle_sudo()""",
+            "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "message": {"type": "string", "description": "Status message"},
+                },
+                "required": ["message"],
+            },
+        },
+        {
+            "name": "find_image",
+            "description": """Find a UI element on screen using an image template.
+
+WHEN TO USE:
+- Locating specific icons, buttons, or images
+- When 'perceive' is too slow or imprecise
+- Verifying an element exists
+
+HOW IT WORKS:
+- Takes a template image path
+- Scans the current screen for matches
+- Returns coordinates of matches
+
+INPUT:
+- template_path: Path to the image file to look for
+- confidence: Match threshold 0.0-1.0 (default: 0.8)
+
+OUTPUT:
+- matches: List of found locations with coordinates
+
+EXAMPLE:
+find_image(template_path="/home/user/templates/save_icon.png")""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "template_path": {
+                        "type": "string",
+                        "description": "Path to the template image file",
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "description": "Match threshold (0.0 to 1.0)",
+                    },
+                },
+                "required": ["template_path"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "matches": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "center_x": {"type": "integer"},
+                                "center_y": {"type": "integer"},
+                                "confidence": {"type": "number"},
+                            }
+                        },
+                        "description": "List of matches found",
+                    },
+                },
+                "required": ["matches"],
+            },
+        },
+        {
+            "name": "wait_for_image",
+            "description": """Wait until a specific image appears on the screen.
+
+WHEN TO USE:
+- Waiting for an app to load
+- Waiting for a process to complete (e.g., "Done" checkmark)
+- Synchronizing actions with UI state
+
+HOW IT WORKS:
+- Repeatedly calls 'find_image'
+- Returns when a match is found or timeout is reached
+
+INPUT:
+- template_path: Path to the image file
+- timeout: Max seconds to wait (default: 10)
+- confidence: Match threshold (default: 0.8)
+
+OUTPUT:
+- success: True if found, False if timed out
+- match: The found match details
+
+EXAMPLE:
+launch_app("firefox")
+wait_for_image(template_path="firefox_logo.png", timeout=15)""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "template_path": {
+                        "type": "string",
+                        "description": "Path to the template image file",
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Maximum seconds to wait",
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "description": "Match threshold (0.0 to 1.0)",
+                    },
+                },
+                "required": ["template_path"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "success": {"type": "boolean"},
+                    "match": {"type": "object", "description": "Details of the found match"},
+                },
+                "required": ["success"],
+            },
+        },
+        {
+            "name": "run_terminal_cmd",
+            "description": """Run a shell command in the background and return the output.
+
+WHEN TO USE:
+- Checking system status (e.g., 'uptime', 'df -h')
+- Running CLI tools that don't need interaction
+- Getting file information
+- Checking if a process is running ('pgrep')
+
+HOW IT WORKS:
+- Executes command in a subprocess shell
+- Captures stdout and stderr
+- Returns output after command completes (or times out)
+
+INPUT:
+- command: The shell command to run
+
+OUTPUT:
+- stdout: Standard output
+- stderr: Standard error
+- returncode: Exit code (0 = success)
+
+EXAMPLE:
+run_terminal_cmd(command="date")""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "Shell command to execute",
+                    },
+                },
+                "required": ["command"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "stdout": {"type": "string"},
+                    "stderr": {"type": "string"},
+                    "returncode": {"type": "integer"},
+                },
+                "required": ["stdout", "returncode"],
+            },
+        },
+        {
+            "name": "check_notification",
+            "description": """Check for recent system notifications (Linux).
+
+WHEN TO USE:
+- Verifying if an app sent a notification (e.g., "New Message")
+- Waiting for a long process to finish
+- Monitoring system alerts
+
+HOW IT WORKS:
+- Uses 'dbus-monitor' to listen for notification events
+- Returns the most recent notification if found
+
+INPUT:
+- timeout: How long to listen in seconds (default: 5)
+
+OUTPUT:
+- found: True/False
+- title: Notification title
+- body: Notification body text
+
+EXAMPLE:
+check_notification(timeout=10)""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Seconds to listen for notifications",
+                    },
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "found": {"type": "boolean"},
+                    "title": {"type": "string"},
+                    "body": {"type": "string"},
+                },
+                "required": ["found"],
+            },
+        },
+        {
+            "name": "use_skill",
+            "description": """Execute a high-level application skill.
+
+WHEN TO USE:
+- Performing complex, multi-step actions in supported apps
+- Sending messages on Signal or WhatsApp
+- Executing predefined workflows
+
+HOW IT WORKS:
+- Looks up the named skill in the registry
+- Executes the skill with provided parameters
+- Handles app launching and navigation automatically
+
+INPUT:
+- skill: Name of the skill (e.g., "signal:send", "whatsapp:send")
+- params: Dictionary of parameters required by the skill
+
+OUTPUT:
+- success: True/False
+- message: Result description
+
+AVAILABLE SKILLS:
+- signal:send (contact, message)
+- whatsapp:send (contact, message)
+
+EXAMPLE:
+use_skill(skill="signal:send", params={"contact": "Alice", "message": "Hi!"})""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "skill": {
+                        "type": "string",
+                        "description": "Name of the skill to execute",
+                    },
+                    "params": {
+                        "type": "object",
+                        "description": "Parameters for the skill",
+                    },
+                },
+                "required": ["skill", "params"],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                },
+                "required": ["success", "message"],
+            },
+        },
+        {
+            "name": "get_agent_history",
+            "description": """Retrieve the history of recent actions performed by the agent.
+
+WHEN TO USE:
+- Debugging why a previous action failed
+- Checking what was just done (e.g., "Did I already click that?")
+- Verifying the sequence of operations
+
+HOW IT WORKS:
+- Returns a list of the most recent tool executions
+- Includes tool name, parameters, result, and success status
+
+INPUT:
+- limit: Number of recent actions to retrieve (default: 10)
+
+OUTPUT:
+- history: List of action logs (newest first)
+
+EXAMPLE:
+get_agent_history(limit=5)""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of recent actions to retrieve",
+                    },
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+            "output_schema": {
+                "type": "object",
+                "properties": {
+                    "history": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "timestamp": {"type": "number"},
+                                "tool_name": {"type": "string"},
+                                "success": {"type": "boolean"},
+                                "result": {"type": "object"},
+                            }
+                        },
+                    },
+                },
+                "required": ["history"],
+            },
+        },
     ]
