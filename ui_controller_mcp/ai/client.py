@@ -29,7 +29,10 @@ class AIClient:
         prompt = (
             f"Analyze this UI screenshot. {instruction}\n"
             "Describe the visible interactive elements, their approximate locations, and the overall context. "
-            "Be specific about buttons, input fields, and text."
+            "If you see a button, input field, or text, describe it and its approximate location."
+            "Example: 'There is a button labeled 'Submit' in the bottom right corner of the screen at (100, 100)."
+            "Be specific about buttons, input fields, and text. Also include coordinates for each element."
+            "When getting coordinates, use the center of the element."
         )
 
         try:
@@ -63,7 +66,7 @@ class AIClient:
             f"User Goal: {goal}\n\n"
             "Based on the UI state and the goal, determine the single next immediate action to take. "
             "Return the plan in a clear, step-by-step format. "
-            "If you need to click something, specify the element and its approximate location if known. "
+            "If you need to click something, specify the element and its approximate location (center of the element). "
             "If you need to type something, specify the text."
         )
 
