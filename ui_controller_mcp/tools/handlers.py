@@ -99,7 +99,7 @@ class ToolExecutor:
         result = self.controller.launch_app(target)
         return {"success": result.success, "message": result.message, "data": result.data}
 
-    def _list_windows(self) -> dict[str, Any]:
+    def _list_windows(self, params: Dict[str, Any]) -> dict[str, Any]:
         result = self.controller.list_windows()
         payload: dict[str, Any] = {"success": result.success, "message": result.message}
         if result.data is not None:

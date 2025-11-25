@@ -13,7 +13,11 @@ class AIClient:
     def __init__(self, vision_model: str = "llama3.2-vision", planning_model: str = "llama3.2"):
         self.vision_model = os.getenv("OLLAMA_VISION_MODEL", vision_model)
         self.planning_model = os.getenv("OLLAMA_PLANNING_MODEL", planning_model)
-        self.client = Client(host=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
+        # Ensure no trailing slash or weird characters
+        if not base_url.startswith("http"):
+            base_url = f"http://{base_url}"
+        self.client = Client(host=base_url)
 
     def analyze_image(self, image_data: str, instruction: str = "") -> str:
         """
