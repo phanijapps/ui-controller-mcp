@@ -276,13 +276,14 @@ INPUT:
   * "Hello, World!" - Simple text
   * "search query" - Search terms
   * "123456" - Numbers
+- enter (optional): Whether to press Enter after typing (default: false)
+  * true - Press Enter key after text
+  * false - Just type text
 
 OUTPUT:
 - message: Confirmation that text was typed
 
 IMPORTANT NOTES:
-- Does NOT press Enter automatically - text only
-- Special keys (Enter, Tab, etc.) require separate handling
 - Text is typed character by character (not pasted)
 - Ensure correct field is focused before typing
 
@@ -301,13 +302,17 @@ type_text("user@example.com")
 perceive(instruction="Check if email was entered")
 # Move to next field
 click(x=640, y=350)  # Password field
-type_text("mypassword123")""",
+type_text("mypassword123", enter=True)  # Submit form""",
             "input_schema": {
                 "type": "object",
                 "properties": {
                     "text": {
                         "type": "string",
                         "description": "The text to type into the active window or field",
+                    },
+                    "enter": {
+                        "type": "boolean",
+                        "description": "Whether to press Enter after typing (default: false)",
                     },
                 },
                 "required": ["text"],

@@ -133,7 +133,7 @@ class PyAutoGUIController:
         except Exception as exc:
             return DesktopActionResult(False, f"Click failed: {exc}")
 
-    def type_text(self, text: str) -> DesktopActionResult:
+    def type_text(self, text: str, enter: bool = False) -> DesktopActionResult:
         if self.pyautogui is None:
             return DesktopActionResult(False, "PyAutoGUI not available")
         
@@ -141,6 +141,11 @@ class PyAutoGUIController:
             # Use write() for general text (supports all characters)
             # interval helps prevent missing keystrokes on some OSs
             self.pyautogui.write(text, interval=0.01)
+            
+            if enter:
+                self.pyautogui.press("enter")
+                return DesktopActionResult(True, "Text typed and Enter pressed")
+            
             return DesktopActionResult(True, "Text typed")
         except Exception as exc:
             return DesktopActionResult(False, f"Typing failed: {exc}")
