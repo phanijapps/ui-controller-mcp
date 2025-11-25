@@ -15,6 +15,17 @@ def test_fastmcp_registers_expected_tools():
         "scroll",
         "screenshot",
         "get_bytes",
+        "perceive",
+        "reason",
+        "manage_credentials",
+        "type_password",
+        "handle_sudo",
+        "find_image",
+        "wait_for_image",
+        "run_terminal_cmd",
+        "check_notification",
+        "use_skill",
+        "get_agent_history",
     }.issubset(tools.keys())
 
 

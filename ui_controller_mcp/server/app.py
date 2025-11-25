@@ -109,10 +109,10 @@ def click(
     description=_tool_info("type_text")["description"],
     output_schema=_tool_info("type_text")["output_schema"],
 )
-def type_text(text: str) -> dict[str, Any]:
+def type_text(text: str, enter: bool = False) -> dict[str, Any]:
     """Type text into the active window with safety checks."""
 
-    return tool_executor.execute("type_text", {"text": text})
+    return tool_executor.execute("type_text", {"text": text, "enter": enter})
 
 
 @server.tool(
@@ -171,6 +171,118 @@ def reason(analysis: str, goal: str) -> dict[str, Any]:
     """Plan the next action based on UI analysis and goal."""
 
     return tool_executor.execute("reason", {"analysis": analysis, "goal": goal})
+
+
+@server.tool(
+    name="manage_credentials",
+    description=_tool_info("manage_credentials")["description"],
+    output_schema=_tool_info("manage_credentials")["output_schema"],
+)
+def manage_credentials(
+    action: Literal["set", "check"],
+    id: str,
+    value: str | None = None,
+) -> dict[str, Any]:
+    """Manage secure credentials."""
+
+    return tool_executor.execute(
+        "manage_credentials", {"action": action, "id": id, "value": value}
+    )
+
+
+@server.tool(
+    name="type_password",
+    description=_tool_info("type_password")["description"],
+    output_schema=_tool_info("type_password")["output_schema"],
+)
+def type_password(id: str, enter: bool = False) -> dict[str, Any]:
+    """Type a stored password securely."""
+
+    return tool_executor.execute("type_password", {"id": id, "enter": enter})
+
+
+@server.tool(
+    name="handle_sudo",
+    description=_tool_info("handle_sudo")["description"],
+    output_schema=_tool_info("handle_sudo")["output_schema"],
+)
+def handle_sudo() -> dict[str, Any]:
+    """Handle sudo prompt by typing the stored sudo password."""
+
+    return tool_executor.execute("handle_sudo", {})
+
+
+@server.tool(
+    name="find_image",
+    description=_tool_info("find_image")["description"],
+    output_schema=_tool_info("find_image")["output_schema"],
+)
+def find_image(template_path: str, confidence: float = 0.8) -> dict[str, Any]:
+    """Find a UI element on screen using an image template."""
+
+    return tool_executor.execute(
+        "find_image", {"template_path": template_path, "confidence": confidence}
+    )
+
+
+@server.tool(
+    name="wait_for_image",
+    description=_tool_info("wait_for_image")["description"],
+    output_schema=_tool_info("wait_for_image")["output_schema"],
+)
+def wait_for_image(
+    template_path: str, timeout: int = 10, confidence: float = 0.8
+) -> dict[str, Any]:
+    """Wait until a specific image appears on the screen."""
+
+    return tool_executor.execute(
+        "wait_for_image",
+        {"template_path": template_path, "timeout": timeout, "confidence": confidence},
+    )
+
+
+@server.tool(
+    name="run_terminal_cmd",
+    description=_tool_info("run_terminal_cmd")["description"],
+    output_schema=_tool_info("run_terminal_cmd")["output_schema"],
+)
+def run_terminal_cmd(command: str) -> dict[str, Any]:
+    """Run a shell command in the background and return the output."""
+
+    return tool_executor.execute("run_terminal_cmd", {"command": command})
+
+
+@server.tool(
+    name="check_notification",
+    description=_tool_info("check_notification")["description"],
+    output_schema=_tool_info("check_notification")["output_schema"],
+)
+def check_notification(timeout: int = 5) -> dict[str, Any]:
+    """Check for recent system notifications."""
+
+    return tool_executor.execute("check_notification", {"timeout": timeout})
+
+
+@server.tool(
+    name="use_skill",
+    description=_tool_info("use_skill")["description"],
+    output_schema=_tool_info("use_skill")["output_schema"],
+)
+def use_skill(skill: str, params: dict[str, Any]) -> dict[str, Any]:
+    """Execute a high-level application skill."""
+
+    return tool_executor.execute("use_skill", {"skill": skill, "params": params})
+
+
+@server.tool(
+    name="get_agent_history",
+    description=_tool_info("get_agent_history")["description"],
+    output_schema=_tool_info("get_agent_history")["output_schema"],
+)
+def get_agent_history(limit: int = 10) -> dict[str, Any]:
+    """Retrieve the history of recent actions performed by the agent."""
+
+    return tool_executor.execute("get_agent_history", {"limit": limit})
 
 
 async def health(_: Request) -> JSONResponse:  # pragma: no cover - trivial
